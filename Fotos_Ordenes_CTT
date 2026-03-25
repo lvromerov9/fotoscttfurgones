@@ -59,6 +59,12 @@
         form.addEventListener('submit', function(e) {
             e.preventDefault();
 
+            if (document.getElementById('fotos').files.length < 10) {
+                statusDiv.textContent = 'Error: Debes seleccionar al menos 10 fotos.';
+                statusDiv.style.color = 'red';
+                return; // Detiene el envío del formulario
+            }
+
             submitBtn.disabled = true;
             submitBtn.textContent = 'Enviando...';
             spinner.style.display = 'block';
