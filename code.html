@@ -38,7 +38,7 @@
                 <input type="text" id="chofer" name="chofer" required>
             </div>
             <div class="form-group">
-                <label for="fotos">Adjuntar Fotos (mínimo 10)</label>
+                <label for="fotos">Adjuntar Fotos</label>
                 <input type="file" id="fotos" name="fotos" multiple required accept="image/*">
             </div>
             <button type="submit" id="submitBtn">Enviar Registro</button>
@@ -53,17 +53,10 @@
         const statusDiv = document.getElementById('status');
         const spinner = document.getElementById('spinner');
 
-        // ### PEGA AQUÍ LA URL DE TU APLICACIÓN WEB DE APPS SCRIPT ###
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw64aetJO6Llqkw6iVxL5_6rqE-Sz6B_akBF7mAONXYxdYHu1oa7JaXIhBh-x7fk8Uu/exec';
 
         form.addEventListener('submit', function(e) {
             e.preventDefault();
-
-            if (document.getElementById('fotos').files.length < 10) {
-                statusDiv.textContent = 'Error: Debes seleccionar al menos 10 fotos.';
-                statusDiv.style.color = 'red';
-                return; // Detiene el envío del formulario
-            }
 
             submitBtn.disabled = true;
             submitBtn.textContent = 'Enviando...';
@@ -81,7 +74,7 @@
                         resolve({
                             name: file.name,
                             mimeType: file.type,
-                            data: event.target.result.split(',')[1] // Obtener solo la parte Base64
+                            data: event.target.result.split(',')[1]
                         });
                     };
                     reader.onerror = reject;
@@ -110,7 +103,7 @@
                             statusDiv.style.color = 'green';
                             form.reset();
                         } else {
-                            throw new Error(data.message || 'Error desconocido del servidor.');
+                            throw new Error(data.message || 'Error del servidor.');
                         }
                     })
                     .catch(error => {
@@ -132,6 +125,5 @@
                 });
         });
     </script>
-
 </body>
 </html>
