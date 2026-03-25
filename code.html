@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Entrega</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { background-color: #fff; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 100%; max-width: 500px; box-sizing: border-box; margin: 20px; }
+        h1 { color: #1c1e21; text-align: center; margin-bottom: 1.5rem; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: #606770; }
+        input[type="text"], input[type="file"] { width: 100%; padding: 12px; border: 1px solid #dddfe2; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
+        input[type="file"] { background-color: #f5f6f7; }
+        button { background-color: #1877f2; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-size: 1.1rem; font-weight: bold; margin-top: 1rem; }
+        button:hover { background-color: #166fe5; }
+        button:disabled { background-color: #a0bdf5; cursor: not-allowed; }
+        #status { text-align: center; margin-top: 1.5rem; font-weight: bold; }
+        .spinner { border: 4px solid rgba(0,0,0,.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: #1877f2; animation: spin 1s ease infinite; margin: 20px auto; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Registro de Entrega</h1>
+        <form id="deliveryForm">
+            <div class="form-group">
+                <label for="orden">Número de Orden</label>
+                <input type="text" id="orden" name="orden" required>
+            </div>
+            <div class="form-group">
+                <label for="coordinador">Coordinador</label>
+                <input type="text" id="coordinador" name="coordinador" required>
+            </div>
+            <div class="form-group">
+                <label for="chofer">Nombre del Chofer</label>
+                <input type="text" id="chofer" name="chofer" required>
+            </div>
+            <div class="form-group">
+                <label for="fotos">Adjuntar Fotos (mínimo 10)</label>
+                <input type="file" id="fotos" name="fotos" multiple required accept="image/*">
+            </div>
+            <button type="submit" id="submitBtn">Enviar Registro</button>
+        </form>
+        <div id="spinner" class="spinner"></div>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('deliveryForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusDiv = document.getElementById('status');
+        const spinner = document.getElementById('spinner');
+
+        // ### PEGA AQUÍ LA URL DE TU APLICACIÓN WEB DE APPS SCRIPT ###
+        const SCRIPT_URL = 'URL_DE_TU_APP_SCRIPT_AQUI';
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (document.getElementById('fotos').files.length < 10) {
+                statusDiv.textContent = 'Error: Debes seleccionar al menos 10 fotos.';
+                statusDiv.style.color = 'red';
+                return; // Detiene el envío del formulario
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Enviando...';
+            spinner.style.display = 'block';
+            statusDiv.textContent = '';
+
+            const files = document.getElementById('fotos').files;
+            const filePromises = [];
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const reader = new FileReader();
+                filePromises.push(new Promise((resolve, reject) => {
+                    reader.onload = (event) => {
+                        resolve({
+                            name: file.name,
+                            mimeType: file.type,
+                            data: event.target.result.split(',')[1] // Obtener solo la parte Base64
+                        });
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                }));
+            }
+
+            Promise.all(filePromises)
+                .then(fileData => {
+                    const payload = {
+                        orden: document.getElementById('orden').value,
+                        coordinador: document.getElementById('coordinador').value,
+                        chofer: document.getElementById('chofer').value,
+                        files: fileData
+                    };
+
+                    fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(payload),
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            statusDiv.textContent = '¡Éxito! Registro enviado correctamente.';
+                            statusDiv.style.color = 'green';
+                            form.reset();
+                        } else {
+                            throw new Error(data.message || 'Error desconocido del servidor.');
+                        }
+                    })
+                    .catch(error => {
+                        statusDiv.textContent = 'Error al enviar: ' + error.message;
+                        statusDiv.style.color = 'red';
+                    })
+                    .finally(() => {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Enviar Registro';
+                        spinner.style.display = 'none';
+                    });
+                })
+                .catch(error => {
+                    statusDiv.textContent = 'Error al procesar las imágenes.';
+                    statusDiv.style.color = 'red';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Enviar Registro';
+                    spinner.style.display = 'none';
+                });
+        });
+    </script>
+
+</body>
+</html>
